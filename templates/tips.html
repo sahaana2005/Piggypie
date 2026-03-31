@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Expense Manager — Smart Tips</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root{
+      --accent:#0ea5ff;
+      --muted:#6b7280;
+      --card-bg:#ffffff;
+    }
+
+    html,body { height:100%; margin:0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: linear-gradient(180deg,#eef2f3,#f7fbff); }
+
+    /* NAVBAR */
+    .topbar {
+      position: fixed; top:0; left:0; right:0; height:64px;
+      background: #0b1220; color:white; display:flex; align-items:center; gap:16px; padding:0 18px; z-index:1200;
+      box-shadow: 0 4px 18px rgba(6,10,15,0.12);
+    }
+    .hamburger { font-size:26px; background:none; border:none; color:white; cursor:pointer; padding:6px; }
+    .brand { display:flex; align-items:center; gap:10px; color:var(--accent); font-weight:700; font-size:1.25rem; user-select:none; }
+    .brand .logo-box { width:38px; height:38px; background:linear-gradient(135deg,#06b6d4,#3b82f6); border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-weight:800; }
+
+    /* SIDEBAR */
+    .sidebar { position:fixed; top:64px; left:0; bottom:0; width:240px; background:#0f1724; color:#e6eef8; padding-top:12px; transition:all .28s ease; overflow:hidden; z-index:1100; }
+    .sidebar.collapsed { width:0; opacity:0; pointer-events:none; }
+    .nav-item { display:flex; align-items:center; gap:12px; height:56px; padding:0 18px; cursor:pointer; color:#c7d2fe; }
+    .nav-item:hover { background:#0b1222; color:white; }
+    .nav-item .ico { width:34px; text-align:center; font-size:18px; color:#9ca3ff; }
+    .nav-item.active { background:#0b3b66; color:white; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.02); border-radius:8px; }
+
+    /* MAIN */
+    .main { margin-top:64px; margin-left:260px; padding:28px; transition:margin-left .28s ease; }
+    .sidebar.collapsed + .main { margin-left:28px; }
+
+    /* Tips specific styles */
+    .tips-container { max-width:800px; }
+    .tip-card { 
+      background: var(--card-bg); 
+      border-radius:14px; 
+      padding:24px; 
+      margin-bottom:20px; 
+      box-shadow: 0 6px 22px rgba(15,23,42,0.06);
+      border-left: 4px solid #0ea5ff;
+    }
+    .tip-card.warning { border-left-color: #ef4444; }
+    .tip-card.success { border-left-color: #10b981; }
+    .tip-card.saving { border-left-color: #f59e0b; }
+    
+    .tip-header { 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+      margin-bottom: 12px; 
+    }
+    .tip-icon { 
+      font-size: 24px; 
+      width: 40px; 
+      height: 40px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      border-radius: 10px; 
+      background: #eff6ff; 
+    }
+    .tip-card.warning .tip-icon { background: #fef2f2; }
+    .tip-card.success .tip-icon { background: #f0fdf4; }
+    .tip-card.saving .tip-icon { background: #fffbeb; }
+    
+    .tip-title { 
+      font-size: 1.2rem; 
+      font-weight: 600; 
+      color: #0f1724; 
+      margin: 0; 
+    }
+    .tip-content { 
+      color: var(--muted); 
+      line-height: 1.6; 
+      margin-bottom: 16px; 
+    }
+    .tip-action { 
+      background: #f8fafc; 
+      padding: 12px; 
+      border-radius: 8px; 
+      border-left: 3px solid #0ea5ff; 
+    }
+    
+    .muted { color:var(--muted); font-size:0.95rem; }
+    .chip { background:#eef2ff; color:#083344; padding:6px 12px; border-radius:999px; font-weight:600; display:inline-block; margin-right:8px; margin-bottom:8px; }
+
+    /* Mobile responsiveness */
+    @media (max-width:700px){
+      .sidebar { display:none; }
+      .main { margin-left:0; padding:16px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <button class="hamburger" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
+    <div class="brand"><div class="logo-box">EM</div><div style="color:#cfefff; margin-left:6px;">Expense Manager</div></div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar" class="sidebar">
+    <div class="nav-item" id="nav-home" onclick="navClick('home')">
+      <div class="ico">🏠</div> <div>Home</div>
+    </div>
+    <div class="nav-item" id="nav-add" onclick="navClick('add')">
+      <div class="ico">➕</div> <div>Add Transaction</div>
+    </div>
+    <div class="nav-item" id="nav-transactions" onclick="navClick('transactions')">
+      <div class="ico">💼</div> <div>Transactions</div>
+    </div>
+    <div class="nav-item" id="nav-summary" onclick="navClick('summary')">
+      <div class="ico">📊</div> <div>Summary</div>
+    </div>
+    <div class="nav-item" id="nav-charts" onclick="navClick('charts')">
+      <div class="ico">📈</div> <div>Charts</div>
+    </div>
+    <div class="nav-item" id="nav-reports" onclick="navClick('reports')">
+      <div class="ico">🧾</div> <div>Reports</div>
+    </div>
+    <div class="nav-item active" id="nav-tips" onclick="navClick('tips')">
+      <div class="ico">💡</div> <div>Tips</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <main id="main" class="main">
+    <div class="tips-container">
+      <h2>💡 Smart Money Tips</h2>
+      <p class="muted">Personalized advice to help you save more and spend wisely</p>
+
+      <!-- Budgeting Tips -->
+      <div class="tip-card success">
+        <div class="tip-header">
+          <div class="tip-icon">📊</div>
+          <h3 class="tip-title">Master the 50/30/20 Rule</h3>
+        </div>
+        <div class="tip-content">
+          Allocate 50% of your income to needs, 30% to wants, and 20% to savings and debt repayment. This simple framework helps maintain financial balance.
+        </div>
+        <div class="tip-action">
+          <strong>Try this:</strong> Calculate your monthly take-home pay and split it according to this rule. Adjust categories based on your priorities.
+        </div>
+      </div>
+
+      <!-- Saving Tips -->
+      <div class="tip-card saving">
+        <div class="tip-header">
+          <div class="tip-icon">💰</div>
+          <h3 class="tip-title">Pay Yourself First</h3>
+        </div>
+        <div class="tip-content">
+          Before paying bills or spending on entertainment, transfer a fixed amount (10-20%) to your savings account. This builds the savings habit automatically.
+        </div>
+        <div class="tip-action">
+          <strong>Action step:</strong> Set up an automatic transfer from your checking to savings account right after you get paid.
+        </div>
+      </div>
+
+      <!-- Spending Tips -->
+      <div class="tip-card">
+        <div class="tip-header">
+          <div class="tip-icon">🛒</div>
+          <h3 class="tip-title">The 24-Hour Rule</h3>
+        </div>
+        <div class="tip-content">
+          For any non-essential purchase over ₹2000, wait 24 hours before buying. This prevents impulse purchases and gives you time to consider if you really need it.
+        </div>
+        <div class="tip-action">
+          <strong>Challenge:</strong> Try this for one week and see how much money you save from avoided impulse buys.
+        </div>
+      </div>
+
+      <!-- Food & Dining -->
+      <div class="tip-card warning">
+        <div class="tip-header">
+          <div class="tip-icon">🍽️</div>
+          <h3 class="tip-title">Reduce Eating Out</h3>
+        </div>
+        <div class="tip-content">
+          Eating out frequently can consume 20-30% of your monthly budget. Cooking at home is typically 3-5 times cheaper and often healthier.
+        </div>
+        <div class="tip-action">
+          <strong>Smart swap:</strong> Limit eating out to twice a week. Meal prep on weekends to make home cooking easier during busy weekdays.
+        </div>
+      </div>
+
+      <!-- Subscription Management -->
+      <div class="tip-card">
+        <div class="tip-header">
+          <div class="tip-icon">📱</div>
+          <h3 class="tip-title">Audit Your Subscriptions</h3>
+        </div>
+        <div class="tip-content">
+          Most people pay for subscriptions they rarely use. Streaming services, apps, and memberships can add up to significant monthly expenses.
+        </div>
+        <div class="tip-action">
+          <strong>This weekend:</strong> List all your subscriptions and cancel at least two you haven't used in the past month.
+        </div>
+      </div>
+
+      <!-- Emergency Fund -->
+      <div class="tip-card success">
+        <div class="tip-header">
+          <div class="tip-icon">🛡️</div>
+          <h3 class="tip-title">Build an Emergency Fund</h3>
+        </div>
+        <div class="tip-content">
+          Aim to save 3-6 months of living expenses. This fund protects you from unexpected events like medical emergencies or job loss without going into debt.
+        </div>
+        <div class="tip-action">
+          <strong>Starting point:</strong> Save ₹1000 first, then work toward one month's expenses, gradually building to 3-6 months.
+        </div>
+      </div>
+
+      <!-- Quick Savings Challenges -->
+      <div class="tip-card saving">
+        <div class="tip-header">
+          <div class="tip-icon">🎯</div>
+          <h3 class="tip-title">30-Day Savings Challenge</h3>
+        </div>
+        <div class="tip-content">
+          Save ₹1 on day 1, ₹2 on day 2, and so on for 30 days. By the end, you'll have saved ₹465 without feeling the pinch!
+        </div>
+        <div class="tip-action">
+          <strong>Start today:</strong> Get a jar or create a separate savings account and begin with ₹1 right now.
+        </div>
+      </div>
+
+      <!-- Financial Goals -->
+      <div class="tip-card">
+        <div class="tip-header">
+          <div class="tip-icon">🎯</div>
+          <h3 class="tip-title">Set SMART Financial Goals</h3>
+        </div>
+        <div class="tip-content">
+          Make goals Specific, Measurable, Achievable, Relevant, and Time-bound. Instead of "save more money," try "save ₹50,000 for a down payment in 12 months."
+        </div>
+        <div class="tip-action">
+          <strong>Write it down:</strong> List one financial goal for 3 months, 1 year, and 5 years from now.
+        </div>
+      </div>
+
+      <!-- Quick Tips Grid -->
+      <div style="margin-top: 40px;">
+        <h4>Quick Wins</h4>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
+          <span class="chip">☕ Make coffee at home</span>
+          <span class="chip">🚲 Walk/bike short distances</span>
+          <span class="chip">📚 Use public library</span>
+          <span class="chip">💧 Carry water bottle</span>
+          <span class="chip">🛒 Shop with a list</span>
+          <span class="chip">📦 Avoid impulse online buys</span>
+          <span class="chip">🌱 Grow herbs at home</span>
+          <span class="chip">🎁 Set gift budgets early</span>
+        </div>
+      </div>
+
+      <!-- Personalized Section -->
+      <div style="margin-top: 40px; background: #f8fafc; padding: 20px; border-radius: 12px;">
+        <h4>📈 Your Personalized Advice</h4>
+        <p class="muted">Based on your spending patterns from the main dashboard</p>
+        <div id="personalized-tips">
+          <p>Add some transactions in the main app to see personalized tips here!</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Simple navigation for tips page
+    function toggleSidebar(){
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('collapsed');
+      document.getElementById('main').classList.toggle('collapsed');
+    }
+
+    function navClick(section){
+      if(section === 'tips') {
+        // We're already on tips page
+        return;
+      }
+      // Redirect to main app for other sections
+      window.location.href = '/';
+    }
+
+    // Make tips page nav item active
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('nav-tips').classList.add('active');
+    });
+  </script>
+</body>
+</html>
