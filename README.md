@@ -1,10 +1,20 @@
-# 💰 Piggypie: Modern Expense Manager
+# 💰 Piggypie: Modern AI-Powered Expense Manager
 
-Piggypie is a powerful, Flask-based financial management application designed to help you track spending, automate recurring transactions, and gain deep insights into your financial health with beautiful visualizations.
+Piggypie is a high-fidelity, Flask-based financial management application designed to help you track spending, automate recurring transactions, and gain personalized insights with an embedded AI Financial Coach.
 
-![Screenshot Placeholder](https://via.placeholder.com/800x450/0f172a/0ea5ff?text=Piggypie+Dashboard+Preview)
+![Premium Landing Page](https://via.placeholder.com/800x450/0d1f0d/4ade80?text=Piggypie+Premium+Entrance)
 
 ## ✨ Premium Features
+
+### 🤖 AI Financial Coach
+- **Data-Aware Analysis**: Our coach analyzes your real SQLite transaction history to give personalized, actionable advice.
+- **Powered by Claude**: Deep financial insights provided by `claude-sonnet-4-20250514`.
+- **Suggestion Chips**: Get quick answers to questions like *"Am I saving enough?"* or *"Where am I overspending?"*
+
+### 🎨 High-Fidelity Landing Page & Unified UI
+- **Premium Intro**: A standalone animated entrance at `/` featuring falling gold ₹ coins and a bouncy leather wallet animation.
+- **"Green Vibes" Theme**: A consistent dark-green aesthetic across the entire app (Landing → Sign Up → Login → Dashboard).
+- **Glassmorphism Design**: Modern, transparent UI elements with neon green accents.
 
 ### 📊 Smart Dashboard
 - **Instant Overview**: Live tracking of your Total Income, Expenses, and Current Balance.
@@ -21,11 +31,6 @@ Piggypie is a powerful, Flask-based financial management application designed to
 - **Budget Alerts**: Get notified when you approach or exceed your spending thresholds.
 - **Personalized Tips**: Practical, data-driven financial advice generated based on your spending habits.
 
-### 🎨 Fully Customizable UI
-- **Dynamic Themes**: Toggle between a sleek Dark Mode and a crisp Light Mode.
-- **Color Personalization**: Customize the theme, background, and card colors to match your style.
-- **Responsive Design**: Seamless experience across desktop and mobile devices.
-
 ### 💼 Professional Data Management
 - **Filtered History**: Search and filter transactions by date, category, or type.
 - **CSV Export**: Download your entire transaction history for external analysis in Excel or other tools.
@@ -33,10 +38,12 @@ Piggypie is a powerful, Flask-based financial management application designed to
 
 ## 🛠️ Technology Stack
 - **Backend**: Python / Flask
+- **AI Integration**: Claude API (via `claude-sonnet-4-20250514`)
 - **Database**: SQLite
-- **Frontend**: HTML5, Vanilla CSS3, JavaScript (ES6+), Bootstrap 5
+- **Frontend**: HTML5, Vanilla CSS3 (Custom Design System), JavaScript (ES6+), Bootstrap 5 (Dashboard only)
+- **Visuals**: Canvas API (Falling Coins), SVG Animations
 - **Charts**: Chart.js
-- **Emails**: SMTP (Gmail integration ready)
+- **Emails**: SMTP
 
 ## 🚀 Quick Start
 
@@ -45,14 +52,11 @@ Piggypie is a powerful, Flask-based financial management application designed to
    pip install flask
    ```
 
-2. **Configure Email (Optional)**:
-   Update `EMAIL_CONFIG` in `app.py` with your SMTP details.
-
-3. **Run the Application**:
+2. **Run the Application**:
    ```bash
    python app.py
    ```
-   Visit `http://localhost:5000` in your browser.
+   Visit `http://localhost:5000` to see the high-fidelity landing page.
 
 ---
 *Built with ❤️ for better financial clarity.*
