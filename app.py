@@ -359,6 +359,13 @@ def send_weekly_reports():
 # ✅ Home Route
 @app.route("/")
 def home():
+    if 'user_id' in session:
+        return redirect('/dashboard')
+    return render_template("landing.html")
+
+
+@app.route("/dashboard")
+def dashboard():
     if 'user_id' not in session:
         return redirect('/login')
 
@@ -370,7 +377,7 @@ def home():
 @app.route("/login")
 def login_page():
     if 'user_id' in session:
-        return redirect('/')
+        return redirect('/dashboard')
     return render_template("login.html")
 
 
@@ -378,7 +385,7 @@ def login_page():
 @app.route("/signup")
 def signup_page():
     if 'user_id' in session:
-        return redirect('/')
+        return redirect('/dashboard')
     return render_template("signup.html")
 
 
@@ -887,6 +894,9 @@ def ai_coach_context():
         'cat_breakdown': cat_breakdown,
         'username':      session.get('username', 'User')
     })
+
+
+
 
 
 

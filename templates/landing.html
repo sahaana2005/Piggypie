@@ -188,6 +188,18 @@
       letter-spacing: 0.05em;
     }
 
+    .error-msg {
+      font-size: 0.75rem;
+      color: #f87171;
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.2);
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+
     /* Shared form styles */
     .field { margin-bottom: 14px; }
 
@@ -405,23 +417,25 @@
     </div>
 
     <!-- Quick login card -->
-    <div class="hero-card">
+    <div class="hero-card" id="hero-login-card">
       <p class="hero-card-title">Quick sign in</p>
+      <div class="error-msg" id="hero-error"></div>
 
       <div class="field">
-        <label>Email</label>
-        <input type="email" placeholder="you@example.com" autocomplete="email" />
+        <label>Username</label>
+        <input type="text" id="hero-username" placeholder="Enter username" />
       </div>
 
       <div class="field">
         <label>Password</label>
-        <input type="password" placeholder="••••••••" autocomplete="current-password" />
+        <input type="password" id="hero-password" placeholder="••••••••" />
       </div>
 
-      <button class="btn-full" onclick="goToLogin()">Enter Piggypie</button>
+      <button class="btn-full" id="hero-login-btn" onclick="submitLogin('hero-username', 'hero-password', 'hero-login-btn', 'hero-error')">Enter Piggypie</button>
 
-      <p class="tiny-link">New here? <a href="#" onclick="goToLogin(); return false;">Create account</a></p>
+      <p class="tiny-link">New here? <a href="/signup">Create account</a></p>
     </div>
+
 
   </div>
 </div><!-- /#hero -->
@@ -441,21 +455,30 @@
     </div>
     <div class="divider"></div>
 
+    <div class="login-logo">
+      <div class="logo-mark">Piggy<span class="green">pie</span></div>
+      <div class="logo-sub">Expense Manager</div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="error-msg" id="login-error"></div>
+
     <div class="field">
-      <label>Email address</label>
-      <input type="email" placeholder="you@example.com" autocomplete="email" id="login-email" />
+      <label>Username</label>
+      <input type="text" placeholder="Enter username" id="login-username" />
     </div>
 
     <div class="field">
       <label>Password</label>
-      <input type="password" placeholder="••••••••" autocomplete="current-password" id="login-pass" />
+      <input type="password" placeholder="••••••••" id="login-password" />
     </div>
 
-    <button class="btn-full" id="signin-btn" style="margin-top:8px;">Sign in</button>
+    <button class="btn-full" id="login-login-btn" onclick="submitLogin('login-username', 'login-password', 'login-login-btn', 'login-error')">Sign in</button>
 
     <p class="tiny-link" style="margin-top:18px;">
-      Don't have an account? <a href="#">Register</a>
+      Don't have an account? <a href="/signup">Register</a>
     </p>
+
   </div>
 </div><!-- /#login-screen -->
 
@@ -472,9 +495,56 @@ function goToLogin() {
   setTimeout(() => {
     hero.style.display = 'none';
     loginScreen.classList.add('visible');
-    document.getElementById('login-email').focus();
+    document.getElementById('login-username').focus();
   }, 580);
 }
+
+async function submitLogin(uId, pId, bId, eId) {
+  const username = document.getElementById(uId).value.trim();
+  const password = document.getElementById(pId).value;
+  const btn = document.getElementById(bId);
+  const errDiv = document.getElementById(eId);
+
+  if (!username || !password) {
+    if (uId === 'hero-username') {
+      goToLogin();
+      return;
+    }
+    errDiv.textContent = 'Please enter both fields.';
+    errDiv.style.display = 'block';
+    return;
+  }
+
+  errDiv.style.display = 'none';
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = 'Signing in...';
+
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      window.location.href = '/dashboard';
+    } else {
+      errDiv.textContent = result.error || 'Invalid credentials';
+      errDiv.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  } catch (err) {
+    errDiv.textContent = 'Connection error. Please try again.';
+    errDiv.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
 
 function goToHero() {
   loginScreen.classList.remove('visible');
