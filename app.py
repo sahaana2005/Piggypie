@@ -845,6 +845,53 @@ def get_user():
     })
 
 
+# ✅ AI Financial Coach Page
+@app.route("/ai-coach")
+@login_required
+def ai_coach():
+    return render_template("ai_coach.html")
+
+
+# ✅ AI Coach — fetch real transaction context
+@app.route("/ai-coach/context", methods=["GET"])
+@login_required
+def ai_coach_context():
+    """Return the last 50 transactions + summary stats for the logged-in user."""
+    conn = get_db()
+    txs = conn.execute('''
+        SELECT id, title, amount, category, type, date
+        FROM transactions
+        WHERE user_id = ?
+        ORDER BY date DESC
+        LIMIT 50
+    ''', (session['user_id'],)).fetchall()
+    conn.close()
+
+    txs = [dict(t) for t in txs]
+
+    total_income  = sum(t['amount'] for t in txs if t['type'] == 'income')
+    total_expense = sum(t['amount'] for t in txs if t['type'] == 'expense')
+    balance       = total_income - total_expense
+
+    cat_breakdown = {}
+    for t in txs:
+        if t['type'] == 'expense':
+            cat_breakdown[t['category']] = cat_breakdown.get(t['category'], 0) + t['amount']
+
+    return jsonify({
+        'transactions': txs,
+        'total_income':  total_income,
+        'total_expense': total_expense,
+        'balance':       balance,
+        'count':         len(txs),
+        'cat_breakdown': cat_breakdown,
+        'username':      session.get('username', 'User')
+    })
+
+
+
+
+
 # ✅ Tips Page
 @app.route("/tips")
 @login_required
