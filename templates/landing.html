@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Piggypie — Expense Manager</title>
+  <meta name="description" content="Piggypie — Track every rupee. Grow every month." />
+
+  <style>
+    /* ── Reset ─────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0d1f0d;
+      color: #fff;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Coin canvas — behind everything ──────────────────────── */
+    #coinCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── Grid overlay ─────────────────────────────────────────── */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(74,222,128,0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(74,222,128,0.07) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* ════════════════════════════════════════════
+       HERO SCREEN
+    ════════════════════════════════════════════ */
+    #hero {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      padding: 0 8vw;
+      gap: 5vw;
+      opacity: 1;
+      transition: opacity 0.55s ease;
+    }
+
+    #hero.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Left column */
+    .hero-left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      max-width: 520px;
+    }
+
+    .eyebrow {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      color: #4ade80;
+      text-transform: uppercase;
+    }
+
+    .hero-title {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: clamp(4rem, 8.5vw, 7.5rem);
+      font-weight: 700;
+      line-height: 0.92;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-title .green { color: #4ade80; }
+
+    .hero-subtitle {
+      font-size: 1.08rem;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.65;
+    }
+
+    .hero-btns {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: #4ade80;
+      color: #052e16;
+      border: none;
+      padding: 13px 32px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.18s, transform 0.18s, box-shadow 0.18s;
+      box-shadow: 0 0 0 0 rgba(74,222,128,0.4);
+    }
+
+    .btn-primary:hover {
+      background: #86efac;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(74,222,128,0.3);
+    }
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-ghost {
+      background: transparent;
+      color: #4ade80;
+      border: 1.5px solid #4ade80;
+      padding: 13px 32px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.18s, transform 0.18s;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(74,222,128,0.09);
+      transform: translateY(-2px);
+    }
+
+    /* Right column */
+    .hero-right {
+      flex: 0 0 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+    }
+
+    /* ── Wallet drop + bob ───────────────────────────────────── */
+    .wallet-wrap {
+      opacity: 0;
+      animation:
+        walletDrop 0.85s cubic-bezier(0.22, 1.5, 0.36, 1) 0.15s forwards,
+        walletBob  3.2s ease-in-out 1.05s infinite;
+      filter: drop-shadow(0 16px 32px rgba(0,0,0,0.55));
+    }
+
+    @keyframes walletDrop {
+      from { transform: translateY(-140px); opacity: 0; }
+      to   { transform: translateY(0px);   opacity: 1; }
+    }
+
+    @keyframes walletBob {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-12px); }
+    }
+
+    /* ── Hero glass card ─────────────────────────────────────── */
+    .hero-card {
+      width: 100%;
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(74,222,128,0.22);
+      border-radius: 18px;
+      padding: 26px 30px 22px;
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #4ade80;
+      margin-bottom: 16px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Shared form styles */
+    .field { margin-bottom: 14px; }
+
+    .field label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      background: rgba(255,255,255,0.055);
+      border: 1px solid rgba(74,222,128,0.18);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 0.87rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .field input::placeholder { color: rgba(255,255,255,0.22); }
+
+    .field input:focus {
+      border-color: #4ade80;
+      background: rgba(74,222,128,0.06);
+    }
+
+    .btn-full {
+      width: 100%;
+      background: #4ade80;
+      color: #052e16;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 6px;
+      transition: background 0.18s;
+    }
+
+    .btn-full:hover { background: #86efac; }
+
+    .tiny-link {
+      display: block;
+      text-align: center;
+      margin-top: 13px;
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.35);
+    }
+
+    .tiny-link a {
+      color: #4ade80;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .tiny-link a:hover { text-decoration: underline; }
+
+    /* ════════════════════════════════════════════
+       LOGIN SCREEN
+    ════════════════════════════════════════════ */
+    #login-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.55s ease;
+    }
+
+    #login-screen.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .login-card {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(74,222,128,0.28);
+      border-radius: 22px;
+      padding: 44px 46px 38px;
+      backdrop-filter: blur(18px);
+    }
+
+    /* Back arrow */
+    .back-btn {
+      position: absolute;
+      top: -54px;
+      left: 0;
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(74,222,128,0.22);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #4ade80;
+      font-size: 1.1rem;
+      transition: background 0.18s, transform 0.18s;
+      line-height: 1;
+      padding: 0;
+      font-family: inherit;
+    }
+
+    .back-btn:hover {
+      background: rgba(74,222,128,0.12);
+      transform: translateX(-3px);
+    }
+
+    /* Logo */
+    .login-logo {
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .login-logo .logo-mark {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 2.1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .login-logo .logo-mark .green { color: #4ade80; }
+
+    .login-logo .logo-sub {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    .divider {
+      width: 36px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #4ade80, transparent);
+      margin: 14px auto 26px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Falling coins canvas ───────────────────────────────── -->
+<canvas id="coinCanvas"></canvas>
+
+<!-- ── Grid overlay ──────────────────────────────────────── -->
+<div class="grid-bg"></div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     HERO SCREEN
+════════════════════════════════════════════════════════ -->
+<div id="hero">
+
+  <!-- Left: text + CTA buttons -->
+  <div class="hero-left">
+    <p class="eyebrow">Expense Manager</p>
+
+    <h1 class="hero-title">Piggy<span class="green">pie</span></h1>
+
+    <p class="hero-subtitle">Track every rupee. Grow every month.</p>
+
+    <div class="hero-btns">
+      <button class="btn-primary" id="hero-get-started" onclick="goToLogin()">Get started</button>
+      <button class="btn-ghost">Learn more</button>
+    </div>
+  </div>
+
+  <!-- Right: wallet SVG + quick login card -->
+  <div class="hero-right">
+
+    <!-- Leather wallet SVG -->
+    <div class="wallet-wrap" id="wallet">
+      <svg width="220" height="170" viewBox="0 0 220 170" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- Wallet body -->
+        <rect x="12" y="56" width="196" height="104" rx="15" fill="#a16207"/>
+        <!-- Top flap -->
+        <rect x="12" y="56" width="196" height="44" rx="15" fill="#92400e"/>
+        <!-- Flap bottom overlap -->
+        <rect x="12" y="84" width="196" height="16" fill="#a16207"/>
+        <!-- Body texture: card lines -->
+        <line x1="34" y1="108" x2="136" y2="108" stroke="#b45309" stroke-width="1.5" stroke-opacity="0.6"/>
+        <line x1="34" y1="120" x2="120" y2="120" stroke="#b45309" stroke-width="1.5" stroke-opacity="0.45"/>
+        <line x1="34" y1="132" x2="128" y2="132" stroke="#b45309" stroke-width="1.5" stroke-opacity="0.35"/>
+        <line x1="34" y1="144" x2="106" y2="144" stroke="#b45309" stroke-width="1.2" stroke-opacity="0.25"/>
+        <!-- Coin pocket (right side) -->
+        <rect x="150" y="93" width="48" height="58" rx="11" fill="#78350f"/>
+        <rect x="152" y="95" width="44" height="54" rx="10" fill="#6c2d08"/>
+        <!-- Coin inside pocket -->
+        <circle cx="174" cy="122" r="17" fill="#1c0a00" stroke="#b45309" stroke-width="1.5"/>
+        <circle cx="174" cy="122" r="11" fill="none" stroke="#fbbf24" stroke-width="1.2"/>
+        <text x="174" y="128" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="bold" font-family="Georgia,serif">₹</text>
+        <!-- Clasp bump -->
+        <rect x="99" y="54" width="22" height="9" rx="4.5" fill="#d97706"/>
+        <circle cx="110" cy="58.5" r="3.2" fill="#fcd34d"/>
+        <!-- Stitching dots on flap edge -->
+        <line x1="24" y1="97" x2="196" y2="97" stroke="#78350f" stroke-width="1" stroke-dasharray="4 5" stroke-opacity="0.6"/>
+      </svg>
+    </div>
+
+    <!-- Quick login card -->
+    <div class="hero-card">
+      <p class="hero-card-title">Quick sign in</p>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" placeholder="you@example.com" autocomplete="email" />
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <input type="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+
+      <button class="btn-full" onclick="goToLogin()">Enter Piggypie</button>
+
+      <p class="tiny-link">New here? <a href="#" onclick="goToLogin(); return false;">Create account</a></p>
+    </div>
+
+  </div>
+</div><!-- /#hero -->
+
+
+<!-- ════════════════════════════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════════════════════════════ -->
+<div id="login-screen" role="main">
+  <div class="login-card">
+
+    <button class="back-btn" onclick="goToHero()" title="Back to home" aria-label="Back">&#8592;</button>
+
+    <div class="login-logo">
+      <div class="logo-mark">Piggy<span class="green">pie</span></div>
+      <div class="logo-sub">Expense Manager</div>
+    </div>
+    <div class="divider"></div>
+
+    <div class="field">
+      <label>Email address</label>
+      <input type="email" placeholder="you@example.com" autocomplete="email" id="login-email" />
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <input type="password" placeholder="••••••••" autocomplete="current-password" id="login-pass" />
+    </div>
+
+    <button class="btn-full" id="signin-btn" style="margin-top:8px;">Sign in</button>
+
+    <p class="tiny-link" style="margin-top:18px;">
+      Don't have an account? <a href="#">Register</a>
+    </p>
+  </div>
+</div><!-- /#login-screen -->
+
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   VIEW TRANSITIONS
+══════════════════════════════════════════════════════════ */
+const hero        = document.getElementById('hero');
+const loginScreen = document.getElementById('login-screen');
+
+function goToLogin() {
+  hero.classList.add('fade-out');
+  setTimeout(() => {
+    hero.style.display = 'none';
+    loginScreen.classList.add('visible');
+    document.getElementById('login-email').focus();
+  }, 580);
+}
+
+function goToHero() {
+  loginScreen.classList.remove('visible');
+  setTimeout(() => {
+    hero.style.display = 'flex';
+    // Tiny delay so display:flex is applied before removing fade-out
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => hero.classList.remove('fade-out'));
+    });
+  }, 320);
+}
+
+/* ══════════════════════════════════════════════════════════
+   FALLING GOLD COINS — CANVAS
+══════════════════════════════════════════════════════════ */
+const canvas = document.getElementById('coinCanvas');
+const ctx    = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const coins = [];
+
+function spawnCoin() {
+  const r = 7 + Math.random() * 6; // radius 7–13 px
+  coins.push({
+    x:      Math.random() * canvas.width,
+    y:      -r * 2.5,
+    r:      r,
+    vy:     0.55 + Math.random() * 0.85,    // fall speed px/frame
+    vx:     (Math.random() - 0.5) * 0.45,   // gentle sideways drift
+    tilt:   Math.random() * Math.PI * 2,     // starting tilt angle
+    tiltV:  0.016 + Math.random() * 0.022    // tilt rotation speed
+  });
+}
+
+function drawCoin(c) {
+  const yRadius = c.r * Math.abs(Math.cos(c.tilt));
+
+  // Skip nearly edge-on coins (avoids a degenerate ellipse)
+  if (yRadius < 0.8) return;
+
+  ctx.save();
+  ctx.translate(c.x, c.y);
+
+  // Radial gradient: white-gold centre → deep amber edge
+  const grad = ctx.createRadialGradient(
+    -c.r * 0.25, -yRadius * 0.25, 0,  // highlight offset
+     0, 0, c.r
+  );
+  grad.addColorStop(0,    '#fff8dc');
+  grad.addColorStop(0.3,  '#fde68a');
+  grad.addColorStop(0.58, '#fcd34d');
+  grad.addColorStop(0.82, '#d97706');
+  grad.addColorStop(1,    '#78350f');
+
+  // Coin face (tilted ellipse)
+  ctx.beginPath();
+  ctx.ellipse(0, 0, c.r, yRadius, 0, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Outer rim stroke
+  ctx.strokeStyle = '#fde68a';
+  ctx.lineWidth = 1.1;
+  ctx.stroke();
+
+  // Inner ring
+  ctx.beginPath();
+  ctx.ellipse(0, 0, c.r * 0.7, yRadius * 0.7, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(253,230,138,0.45)';
+  ctx.lineWidth = 0.65;
+  ctx.stroke();
+
+  // ₹ symbol — only when coin is sufficiently face-on
+  if (yRadius > c.r * 0.38) {
+    const fontSize = Math.floor(c.r * 0.92);
+    ctx.font = `bold ${fontSize}px Georgia, serif`;
+    ctx.fillStyle = '#78350f';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Squish Y to match tilt
+    ctx.scale(1, yRadius / c.r);
+    ctx.fillText('₹', 0, 0);
+  }
+
+  ctx.restore();
+}
+
+/* Animation loop — runs from the start to keep canvas clear */
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = coins.length - 1; i >= 0; i--) {
+    const c = coins[i];
+    c.x    += c.vx;
+    c.y    += c.vy;
+    c.tilt += c.tiltV;
+
+    drawCoin(c);
+
+    // Remove coins that have exited the bottom
+    if (c.y - c.r > canvas.height) {
+      coins.splice(i, 1);
+    }
+  }
+
+  requestAnimationFrame(loop);
+}
+
+loop(); // start drawing immediately
+
+// Begin spawning coins 1.3 s after load — after wallet has landed
+setTimeout(() => {
+  setInterval(spawnCoin, 300);
+}, 1300);
+</script>
+</body>
+</html>
