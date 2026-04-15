@@ -2,7 +2,8 @@
 
 Piggypie is a high-fidelity, Flask-based financial management application designed to help you track spending, automate recurring transactions, and gain personalized insights with an embedded AI Financial Coach.
 
-![Premium Landing Page](https://via.placeholder.com/800x450/0d1f0d/4ade80?text=Piggypie+Premium+Entrance)
+<img width="1919" height="859" alt="image" src="https://github.com/user-attachments/assets/88791a10-cead-4df0-9ce4-b7297034816a" />
+
 
 ## ✨ Premium Features
 
