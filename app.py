@@ -1,8 +1,12 @@
+import os
+import sqlite3
+import psycopg2
+import psycopg2.extras
+from urllib.parse import urlparse
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect
 from datetime import datetime, timedelta
 import csv
 import io
-import sqlite3
 import hashlib
 import smtplib
 from email.mime.text import MIMEText
@@ -12,7 +16,7 @@ import calendar
 from functools import wraps
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Change this to a strong random secret key
+app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
 # ✅ Email Configuration
 EMAIL_CONFIG = {
@@ -24,11 +28,55 @@ EMAIL_CONFIG = {
 }
 
 
-# ✅ Database connection
+# ✅ Database connection helper
+class DBAdapter:
+    def __init__(self, conn, is_postgres=False):
+        self.conn = conn
+        self.is_postgres = is_postgres
+
+    def execute(self, query, params=None):
+        if self.is_postgres:
+            # Handle PostgreSQL placeholder and keyword differences
+            query = query.replace('?', '%s')
+            # Handle AUTOINCREMENT -> SERIAL for table creation
+            if 'AUTOINCREMENT' in query.upper():
+                query = query.replace('AUTOINCREMENT', '')
+                query = query.replace('INTEGER PRIMARY KEY', 'SERIAL PRIMARY KEY')
+        
+        cursor = self.conn.cursor()
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+        return cursor
+
+    def cursor(self):
+        return self.conn.cursor()
+
+    def commit(self):
+        return self.conn.commit()
+
+    def close(self):
+        return self.conn.close()
+
+    def fetchone(self, cursor):
+        return cursor.fetchone()
+
+    def fetchall(self, cursor):
+        return cursor.fetchall()
+
 def get_db():
-    conn = sqlite3.connect('expense_manager.db')
-    conn.row_factory = sqlite3.Row
-    return conn
+    database_url = os.getenv('DATABASE_URL')
+    
+    if database_url:
+        # PostgreSQL connection (Vercel/Production)
+        conn = psycopg2.connect(database_url, cursor_factory=psycopg2.extras.DictCursor)
+        return DBAdapter(conn, is_postgres=True)
+    else:
+        # SQLite connection (Local Development)
+        conn = sqlite3.connect('expense_manager.db')
+        conn.row_factory = sqlite3.Row
+        return DBAdapter(conn, is_postgres=False)
 
 
 # ✅ Create tables if not exists

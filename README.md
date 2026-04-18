@@ -58,5 +58,24 @@ Piggypie is a high-fidelity, Flask-based financial management application design
    ```
    Visit `http://localhost:5000` to see the high-fidelity landing page.
 
+## 🚀 Deployment (Vercel)
+
+This app is ready to be deployed to **Vercel** with a persistent **PostgreSQL** database.
+
+### 1. Create a Database
+1. Go to your [Vercel Dashboard](https://vercel.com/dashboard).
+2. Create a new **Postgres** storage.
+3. Once created, go to the **Settings > Environment Variables** of your project and ensure `POSTGRES_URL` (or `DATABASE_URL`) is present.
+
+### 2. Set Environment Variables
+In your Vercel Project Settings, add these variables:
+- `SECRET_KEY`: A long random string to secure your sessions.
+- `DATABASE_URL`: Your Vercel Postgres connection string (usually handled automatically by Vercel if you use their Postgres).
+
+### 3. Deploy
+1. Push your code to a GitHub repository.
+2. Connect the repository to Vercel.
+3. Vercel will detect the `vercel.json` and `requirements.txt` and deploy automatically!
+
 ---
 *Built with ❤️ for better financial clarity.*
