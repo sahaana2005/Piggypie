@@ -1,8 +1,5 @@
 import os
 import sqlite3
-import psycopg2
-import psycopg2.extras
-from urllib.parse import urlparse
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect
 from datetime import datetime, timedelta
 import csv
@@ -14,6 +11,14 @@ from email.mime.multipart import MIMEMultipart
 import threading
 import calendar
 from functools import wraps
+
+# Conditionally import psycopg2 (only available on Vercel/production)
+try:
+    import psycopg2
+    import psycopg2.extras
+    HAS_PSYCOPG2 = True
+except ImportError:
+    HAS_PSYCOPG2 = False
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
@@ -34,15 +39,19 @@ class DBAdapter:
         self.conn = conn
         self.is_postgres = is_postgres
 
-    def execute(self, query, params=None):
+    def _translate_query(self, query):
+        """Translate SQLite SQL to PostgreSQL SQL when needed."""
         if self.is_postgres:
-            # Handle PostgreSQL placeholder and keyword differences
             query = query.replace('?', '%s')
-            # Handle AUTOINCREMENT -> SERIAL for table creation
             if 'AUTOINCREMENT' in query.upper():
                 query = query.replace('AUTOINCREMENT', '')
                 query = query.replace('INTEGER PRIMARY KEY', 'SERIAL PRIMARY KEY')
-        
+            # PostgreSQL uses DOUBLE PRECISION instead of REAL
+            query = query.replace('REAL NOT NULL', 'DOUBLE PRECISION NOT NULL')
+        return query
+
+    def execute(self, query, params=None):
+        query = self._translate_query(query)
         cursor = self.conn.cursor()
         if params:
             cursor.execute(query, params)
@@ -51,7 +60,8 @@ class DBAdapter:
         return cursor
 
     def cursor(self):
-        return self.conn.cursor()
+        """Return an AdapterCursor that also translates queries."""
+        return AdapterCursor(self.conn.cursor(), self.is_postgres)
 
     def commit(self):
         return self.conn.commit()
@@ -59,16 +69,37 @@ class DBAdapter:
     def close(self):
         return self.conn.close()
 
-    def fetchone(self, cursor):
-        return cursor.fetchone()
 
-    def fetchall(self, cursor):
-        return cursor.fetchall()
+class AdapterCursor:
+    """Wraps a raw DB cursor so that .execute() also translates SQL."""
+    def __init__(self, raw_cursor, is_postgres=False):
+        self._cursor = raw_cursor
+        self.is_postgres = is_postgres
+
+    def execute(self, query, params=None):
+        if self.is_postgres:
+            query = query.replace('?', '%s')
+        if params:
+            self._cursor.execute(query, params)
+        else:
+            self._cursor.execute(query)
+        return self
+
+    def fetchone(self):
+        return self._cursor.fetchone()
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+    @property
+    def description(self):
+        return self._cursor.description
+
 
 def get_db():
     database_url = os.getenv('DATABASE_URL')
-    
-    if database_url:
+
+    if database_url and HAS_PSYCOPG2:
         # PostgreSQL connection (Vercel/Production)
         conn = psycopg2.connect(database_url, cursor_factory=psycopg2.extras.DictCursor)
         return DBAdapter(conn, is_postgres=True)
@@ -150,8 +181,11 @@ def init_db():
     conn.close()
 
 
-# Initialize database
-init_db()
+# Initialize database (wrapped in try/except for serverless cold starts)
+try:
+    init_db()
+except Exception as e:
+    print(f"Warning: Could not initialize DB on startup: {e}")
 
 
 # ✅ Helper function to hash passwords
